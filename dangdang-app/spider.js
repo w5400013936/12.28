@@ -16,25 +16,48 @@ fs.stat('./data',function(err,stats){
 var c = new Crawler({
     maxConnections : 10
 })
+getBookData(
+    'http://bang.dangdang.com/books/newhotsales/01.00.00.00.00.00-recent7-0-0-1-',
+    1,
+    5
+)
 var books = [] // 存储当前的书籍数据
-c.queue([
-    {
-        uri:'http://bang.dangdang.com/books/newhotsales/01.00.00.00.00.00-recent7-0-0-1-1',
-        callback : function(err,res,done){
-            if(error){
-                console.log(error)
+/*
+* baseUrl    基础地址 用于拼接实际的地址时使用
+* page       当前页码
+* pageCount  总页数
+ */
+function getBookData(baseUrl,page,pageCount){
+    var url = baseUrl + page // 实际取数据的地址
+        c.queue([
+        {
+            uri:url,//'http://bang.dangdang.com/books/newhotsales/01.00.00.00.00.00-recent7-0-0-1-1',
+            callback : function(err,res,done){
+                if(err){
+                    console.log(err)
+                }
+                else{
+                    var $ = res.$
+                    $('.bang_list li').each(function(){
+                        // 解析book数据存储在数组中
+                        books.push(convertToBook($(this)))
+                    })
+                    if(page<=pageCount){
+                        getBookData(baseUrl,page+1,pageCount)
+                    }
+                    else{
+                        fs.writeFile('./data/book.json',JSON.stringify(books))
+                        console.log(books)
+                    }
+                    
+                }
+                done;
             }
-            else{
-                var $ = res.$
-                $('.bang_list li').each(function(){
-                    convertToBook($(this))
-                })
-                console.log(books)
-            }
-            done;
         }
-    }
-])
+    ])
+}
+
+
 function convertToBook(tagBook){
     var obj = {}
     obj.title = tagBook.find('.name a').text()
@@ -45,5 +68,6 @@ function convertToBook(tagBook){
     //js中字符串转换为数字 *1或者Number(str)
     obj.price = tagBook.find('.price_n').eq(0).text().replace('¥','')*1
     obj.publisher = tagBook.find('.publisher_info').eq(1).find('a').text()
-    books.push(obj)
+    return obj
+    // books.push(obj)
 }

@@ -9,6 +9,7 @@
   "author": "",
   "license": "ISC",
   "dependencies": {
+    "crawler": "^1.0.1",
     "fs": "0.0.1-security"
   }
 }
